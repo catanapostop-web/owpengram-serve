@@ -1,4 +1,4 @@
-name: Build Server for Android
+name: Build OwpenGram Admin Android
 
 on:
   workflow_dispatch:
@@ -6,21 +6,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Download source
         uses: actions/checkout@v4
 
-      - name: Set up Go
+      - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.25.0'
+          cache: true
 
-      - name: Build ARM64 Binary
+      - name: Build Admin Panel for Android ARM64
+        env:
+          CGO_ENABLED: '0'
+          GOOS: android
+          GOARCH: arm64
         run: |
-          GOOS=linux GOARCH=arm64 go build -o server ./cmd/telesrv
+          go build -p 4 -o admin-panel ./cmd/telesrv-admin
+          file admin-panel
 
-      - name: Upload Binary
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: owpengram-server-android
-          path: server
+          name: OwpenGram-Admin-Android-ARM64
+          path: admin-panel
+          retention-days: 30
