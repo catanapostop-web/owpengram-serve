@@ -1,0 +1,51 @@
+
+name: Build Admin Panel Only
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-admin:
+    name: Build Admin Panel
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+
+      - name: Show repository structure
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 3 -type d -name '*admin*'
+
+      - name: Verify admin source
+        run: |
+          test -f go.mod
+          test -d cmd/telesrv-admin
+          echo "Admin source found"
+
+      - name: Build Admin Panel
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -trimpath -ldflags="-s -w" \
+            -o dist/admin-panel ./cmd/telesrv-admin
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-panel-linux-amd64
+          path: dist/admin-panel
+          if-no-files-found: error
+          retention-days: 30
+          
