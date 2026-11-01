@@ -1,0 +1,56 @@
+
+name: Build Standalone Admin Panel
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'cmd/telesrv-admin/**'
+      - 'internal/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/build-admin.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Admin Panel Linux AMD64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+
+      - name: Check source
+        run: |
+          test -f go.mod
+          test -d cmd/telesrv-admin
+          echo "Admin panel source found"
+
+      - name: Build admin only
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+          go build -trimpath -ldflags="-s -w" \
+          -o dist/admin-panel ./cmd/telesrv-admin
+
+      - name: Check binary
+        run: |
+          file dist/admin-panel
+          ls -lh dist/admin-panel
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-panel-linux-amd64
+          path: dist/admin-panel
+          retention-days: 30
+          
