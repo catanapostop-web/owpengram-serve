@@ -1,0 +1,55 @@
+
+name: Admin Web Only
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin-web:
+    name: Build Admin Web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: cmd/telesrv-admin/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: cmd/telesrv-admin/web
+        run: npm ci
+
+      - name: Build Admin Web
+        working-directory: cmd/telesrv-admin/web
+        run: npm run build
+
+      - name: Verify build
+        working-directory: cmd/telesrv-admin/web
+        run: |
+          test -d dist
+          echo "=== BUILD SIZE ==="
+          du -sh dist
+          echo "=== BUILD FILES ==="
+          find dist -maxdepth 2 -type f
+
+      - name: Upload Admin Web
+        uses: actions/upload-artifact@v4
+        with:
+          name: owpengram-admin-web
+          path: cmd/telesrv-admin/web/dist/
+          if-no-files-found: error
+          retention-days: 30
+          
